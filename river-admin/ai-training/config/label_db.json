@@ -1,0 +1,79 @@
+{
+  "_comment": "本地标签库：定义唯一目标类别（塑料瓶）及其别名与业务字段。清洗、训练集构造、推理过滤共用此配置，保证训练与推理口径一致。",
+  "target_class": "plastic_bottle",
+  "target_cn": "塑料瓶",
+  "aliases": [
+    "plastic_bottle",
+    "plastic bottle",
+    "plasticbottle",
+    "plastic-bottle",
+    "pet_bottle",
+    "pet bottle",
+    "pet_bottle_garbage",
+    "petbottle",
+    "plastic_bottle_garbage",
+    "bottle",
+    "bottles",
+    "塑料瓶",
+    "塑料瓶子",
+    "饮料瓶",
+    "矿泉水瓶"
+  ],
+  "meta": {
+    "priorRisk": 20,
+    "source": "生活垃圾倾倒",
+    "suggestion": "建议现场核查并清理"
+  },
+  "ignored_examples": [
+    "塑料袋",
+    "泡沫",
+    "泡沫箱",
+    "树枝",
+    "树叶",
+    "垃圾",
+    "塑料碎片",
+    "浮标",
+    "渔网",
+    "绳索",
+    "金属",
+    "玻璃"
+  ],
+  "dataset_sources": [
+    {
+      "id": "m0n-plastic-bottles",
+      "name": "m0-n 河道塑料瓶数据集（5,592 标注，真实多国河道场景）",
+      "repo": "m0-n/Plastic-Bottles-Dataset",
+      "classes": ["Plastic Bottle", "bottle"],
+      "manual_download": false,
+      "manual_note": "脚本已自动下载解压（2.6GB），位于 datasets/raw/Plastic-Bottles-Dataset-master/",
+      "expect": "图片与 Pascal VOC xml 同目录同名，坐标与图片尺寸 100% 一致"
+    },
+    {
+      "id": "popxoq-river-plastic-bottle",
+      "name": "popxoq 河道塑料瓶识别数据集",
+      "repo": "popxoq/river-plastic-bottle-detection-dataset",
+      "classes": ["Plastic Bottle"],
+      "manual_download": true,
+      "manual_note": "百度网盘 https://pan.baidu.com/s/1VL4VhxE8KdsIg22kFvf-FA?pwd=cb3p 提取码 cb3p，解压后放入 datasets/raw/popxoq-river-plastic-bottle/",
+      "expect": "标准 YOLO：images/{train,val,test} 与 labels/{train,val,test}，data.yaml 中 nc=1"
+    },
+    {
+      "id": "ssz5-plastic-bottles-in-water",
+      "name": "SSZ5 水中标注塑料瓶数据集（仅用于补充负样本，其标注与图片错位不可用于训练）",
+      "repo": "SSZ5/Object-Detection-Dataset---Annotated-Plastic-Bottles-in-Water",
+      "classes": ["bottle"],
+      "manual_download": true,
+      "manual_note": "labels.zip 可由本仓库脚本自动下载；原图在 Google Drive（见仓库 tiny_yolo_model_link.txt），下载后放入 datasets/raw/ssz5-plastic-bottles-in-water/images/",
+      "expect": "图片 + labels/*.txt（YOLO 归一化坐标）"
+    },
+    {
+      "id": "generic-yolo",
+      "name": "通用 YOLO 数据集（任意 images/labels 目录对）",
+      "repo": null,
+      "classes": [],
+      "manual_download": true,
+      "manual_note": "自行下载后放入 datasets/raw/generic-yolo/，目录内任意位置出现 images/ 与 labels/ 配对子目录即可",
+      "expect": "images/** 与 labels/** 同名同结构配对"
+    }
+  ]
+}

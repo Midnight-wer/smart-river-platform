@@ -1,0 +1,8 @@
+type: yolov8
+name: plastic-bottle-near
+display_name: 塑料瓶检测（本项目 v6/v3 模型）
+model_path: D:/ZM/河道/river-admin/ai-training/models/plastic-bottle-near.onnx
+conf_threshold: 0.15
+iou_threshold: 0.45
+classes:
+  - 塑料瓶

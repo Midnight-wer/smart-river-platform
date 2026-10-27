@@ -1,0 +1,338 @@
+[
+ {
+  "no": 1,
+  "file": "D:\\ZM\\河道\\river-admin\\ai-training\\reports\\webbottles\\images\\train2017_000000209548.jpg",
+  "bbox": [
+   364.87,
+   219.71,
+   94.23,
+   161.65
+  ],
+  "size": [
+   640,
+   427
+  ]
+ },
+ {
+  "no": 2,
+  "file": "D:\\ZM\\河道\\river-admin\\ai-training\\reports\\webbottles\\images\\train2017_000000144467.jpg",
+  "bbox": [
+   3.62,
+   221.4,
+   36.16,
+   113.35
+  ],
+  "size": [
+   640,
+   480
+  ]
+ },
+ {
+  "no": 3,
+  "file": "D:\\ZM\\河道\\river-admin\\ai-training\\reports\\webbottles\\images\\train2017_000000321332.jpg",
+  "bbox": [
+   334.82,
+   206.85,
+   35.18,
+   129.75
+  ],
+  "size": [
+   640,
+   480
+  ]
+ },
+ {
+  "no": 4,
+  "file": "D:\\ZM\\河道\\river-admin\\ai-training\\reports\\webbottles\\images\\train2017_000000463865.jpg",
+  "bbox": [
+   449.37,
+   89.59,
+   71.15,
+   133.79
+  ],
+  "size": [
+   640,
+   480
+  ]
+ },
+ {
+  "no": 5,
+  "file": "D:\\ZM\\河道\\river-admin\\ai-training\\reports\\webbottles\\images\\train2017_000000328780.jpg",
+  "bbox": [
+   370.58,
+   129.47,
+   64.45,
+   149.61
+  ],
+  "size": [
+   640,
+   534
+  ]
+ },
+ {
+  "no": 6,
+  "file": "D:\\ZM\\河道\\river-admin\\ai-training\\reports\\webbottles\\images\\train2017_000000299085.jpg",
+  "bbox": [
+   224.43,
+   347.01,
+   22.66,
+   79.99
+  ],
+  "size": [
+   640,
+   427
+  ]
+ },
+ {
+  "no": 7,
+  "file": "D:\\ZM\\河道\\river-admin\\ai-training\\reports\\webbottles\\images\\train2017_000000488723.jpg",
+  "bbox": [
+   20.9,
+   1.96,
+   104.51,
+   111.04
+  ],
+  "size": [
+   640,
+   580
+  ]
+ },
+ {
+  "no": 8,
+  "file": "D:\\ZM\\河道\\river-admin\\ai-training\\reports\\webbottles\\images\\train2017_000000281679.jpg",
+  "bbox": [
+   109.28,
+   231.25,
+   50.5,
+   178.15
+  ],
+  "size": [
+   640,
+   427
+  ]
+ },
+ {
+  "no": 9,
+  "file": "D:\\ZM\\河道\\river-admin\\ai-training\\reports\\webbottles\\images\\train2017_000000370209.jpg",
+  "bbox": [
+   398.49,
+   44.38,
+   21.97,
+   101.89
+  ],
+  "size": [
+   640,
+   480
+  ]
+ },
+ {
+  "no": 10,
+  "file": "D:\\ZM\\河道\\river-admin\\ai-training\\reports\\webbottles\\images\\train2017_000000502959.jpg",
+  "bbox": [
+   160.2,
+   258.3,
+   29.57,
+   97.94
+  ],
+  "size": [
+   500,
+   375
+  ]
+ },
+ {
+  "no": 11,
+  "file": "D:\\ZM\\河道\\river-admin\\ai-training\\reports\\webbottles\\images\\train2017_000000043306.jpg",
+  "bbox": [
+   169.36,
+   64.51,
+   46.35,
+   91.55
+  ],
+  "size": [
+   500,
+   375
+  ]
+ },
+ {
+  "no": 12,
+  "file": "D:\\ZM\\河道\\river-admin\\ai-training\\reports\\webbottles\\images\\train2017_000000554169.jpg",
+  "bbox": [
+   254.82,
+   42.19,
+   37.41,
+   87.29
+  ],
+  "size": [
+   340,
+   470
+  ]
+ },
+ {
+  "no": 13,
+  "file": "D:\\ZM\\河道\\river-admin\\ai-training\\reports\\webbottles\\images\\train2017_000000384302.jpg",
+  "bbox": [
+   457.12,
+   193.03,
+   28.73,
+   78.35
+  ],
+  "size": [
+   640,
+   425
+  ]
+ },
+ {
+  "no": 14,
+  "file": "D:\\ZM\\河道\\river-admin\\ai-training\\reports\\webbottles\\images\\train2017_000000268516.jpg",
+  "bbox": [
+   175.03,
+   309.67,
+   49.05,
+   97.13
+  ],
+  "size": [
+   640,
+   427
+  ]
+ },
+ {
+  "no": 15,
+  "file": "D:\\ZM\\河道\\river-admin\\ai-training\\reports\\webbottles\\images\\train2017_000000384675.jpg",
+  "bbox": [
+   45.18,
+   8.45,
+   63.19,
+   99.14
+  ],
+  "size": [
+   640,
+   480
+  ]
+ },
+ {
+  "no": 16,
+  "file": "D:\\ZM\\河道\\river-admin\\ai-training\\reports\\webbottles\\images\\train2017_000000205299.jpg",
+  "bbox": [
+   45.42,
+   252.63,
+   26.52,
+   80.37
+  ],
+  "size": [
+   500,
+   333
+  ]
+ },
+ {
+  "no": 17,
+  "file": "D:\\ZM\\河道\\river-admin\\ai-training\\reports\\webbottles\\images\\train2017_000000575206.jpg",
+  "bbox": [
+   262.49,
+   243.68,
+   23.59,
+   72.33
+  ],
+  "size": [
+   500,
+   375
+  ]
+ },
+ {
+  "no": 18,
+  "file": "D:\\ZM\\河道\\river-admin\\ai-training\\reports\\webbottles\\images\\train2017_000000336314.jpg",
+  "bbox": [
+   134.19,
+   2.06,
+   213.68,
+   474.84
+  ],
+  "size": [
+   640,
+   480
+  ]
+ },
+ {
+  "no": 19,
+  "file": "D:\\ZM\\河道\\river-admin\\ai-training\\reports\\webbottles\\images\\train2017_000000293165.jpg",
+  "bbox": [
+   252.43,
+   382.84,
+   67.06,
+   115.24
+  ],
+  "size": [
+   386,
+   640
+  ]
+ },
+ {
+  "no": 20,
+  "file": "D:\\ZM\\河道\\river-admin\\ai-training\\reports\\webbottles\\images\\val2017_000000287714.jpg",
+  "bbox": [
+   419.39,
+   209.99,
+   21.76,
+   87.73
+  ],
+  "size": [
+   640,
+   480
+  ]
+ },
+ {
+  "no": 21,
+  "file": "D:\\ZM\\河道\\river-admin\\ai-training\\reports\\webbottles\\images\\train2017_000000106849.jpg",
+  "bbox": [
+   64.3,
+   347.2,
+   32.67,
+   106.15
+  ],
+  "size": [
+   640,
+   573
+  ]
+ },
+ {
+  "no": 22,
+  "file": "D:\\ZM\\河道\\river-admin\\ai-training\\reports\\webbottles\\images\\train2017_000000041398.jpg",
+  "bbox": [
+   157.09,
+   19.95,
+   77.3,
+   130.91
+  ],
+  "size": [
+   640,
+   480
+  ]
+ },
+ {
+  "no": 23,
+  "file": "D:\\ZM\\河道\\river-admin\\ai-training\\reports\\webbottles\\images\\train2017_000000176330.jpg",
+  "bbox": [
+   246.1,
+   391.42,
+   36.68,
+   88.58
+  ],
+  "size": [
+   640,
+   480
+  ]
+ },
+ {
+  "no": 24,
+  "file": "D:\\ZM\\河道\\river-admin\\ai-training\\reports\\webbottles\\images\\train2017_000000310463.jpg",
+  "bbox": [
+   449.68,
+   0.91,
+   71.29,
+   208.39
+  ],
+  "size": [
+   640,
+   425
+  ]
+ }
+]

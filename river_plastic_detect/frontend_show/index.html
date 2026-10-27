@@ -1,0 +1,639 @@
+<!DOCTYPE html>
+<!-- 河道漂浮垃圾检测 · 前端巡检看板（河道前端展示工程师） -->
+<!-- 说明：本页面为单文件实现，只依赖浏览器原生能力，无需任何前端框架与构建工具 -->
+<html lang="zh-CN">
+<head>
+  <!-- 字符编码，保证中文正常显示 -->
+  <meta charset="UTF-8" />
+  <!-- 移动端自适应 -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>河道漂浮垃圾检测 · 巡检看板</title>
+  <style>
+    /* ===== 全局配色：以河水青蓝为主色，体现水环境治理主题 ===== */
+    :root {
+      --bg: #eef4f6;         /* 页面底色 */
+      --card: #ffffff;      /* 卡片底色 */
+      --primary: #0f6f8c;    /* 主色：河水蓝 */
+      --primary-dark: #0a5468;
+      --danger: #d94f3d;    /* 危险色：高风险目标 */
+      --warn: #e08a1e;      /* 警告色：待复核 */
+      --ok: #2f8f5b;        /* 正常色 */
+      --text: #1d2b30;      /* 正文色 */
+      --muted: #6b7d85;     /* 次要文字色 */
+      --border: #d8e3e7;     /* 边框色 */
+    }
+    /* ===== 基础样式 ===== */
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: "Microsoft YaHei", "PingFang SC", sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      padding: 18px;
+    }
+    /* 顶部标题条 */
+    .topbar {
+      display: flex; align-items: center; justify-content: space-between;
+      background: linear-gradient(90deg, var(--primary-dark), var(--primary));
+      color: #fff; padding: 14px 20px; border-radius: 10px;
+      box-shadow: 0 3px 10px rgba(15, 111, 140, .25);
+    }
+    .topbar h1 { font-size: 20px; letter-spacing: 1px; }
+    .topbar .sub { font-size: 12px; opacity: .85; margin-top: 3px; }
+    /* 服务状态灯 */
+    .status { display: flex; align-items: center; gap: 8px; font-size: 13px; }
+    .dot { width: 10px; height: 10px; border-radius: 50%; background: #9aa; }
+    .dot.ok { background: #52d17c; box-shadow: 0 0 8px #52d17c; }
+    .dot.bad { background: #ff6b5e; box-shadow: 0 0 8px #ff6b5e; }
+    /* ===== 三栏布局 ===== */
+    .layout { display: grid; grid-template-columns: 300px 1fr 320px; gap: 14px; margin-top: 14px; }
+    @media (max-width: 1100px) { .layout { grid-template-columns: 1fr; } }
+    .card {
+      background: var(--card); border: 1px solid var(--border); border-radius: 10px;
+      padding: 14px; box-shadow: 0 2px 6px rgba(0, 0, 0, .04);
+    }
+    .card h2 {
+      font-size: 15px; margin-bottom: 10px; padding-left: 8px;
+      border-left: 4px solid var(--primary); line-height: 1.2;
+    }
+    /* ===== 上传区 ===== */
+    .dropzone {
+      border: 2px dashed var(--primary); border-radius: 10px; padding: 20px 10px;
+      text-align: center; color: var(--muted); cursor: pointer; background: #f6fbfc;
+      transition: all .2s;
+    }
+    .dropzone:hover, .dropzone.drag { background: #e6f4f7; border-color: var(--primary-dark); }
+    .dropzone .big { font-size: 32px; }
+    /* 参数滑块 */
+    .field { margin-top: 14px; }
+    .field label { font-size: 13px; color: var(--muted); }
+    .field input[type=range] { width: 100%; margin-top: 6px; }
+    .btn {
+      width: 100%; margin-top: 12px; padding: 10px; border: none; border-radius: 8px;
+      background: var(--primary); color: #fff; font-size: 14px; cursor: pointer;
+    }
+    .btn:hover { background: var(--primary-dark); }
+    .btn:disabled { background: #b9c8cd; cursor: not-allowed; }
+    /* ===== 画布区 ===== */
+    .canvas-wrap { position: relative; background: #0f1b20; border-radius: 8px; overflow: hidden; }
+    canvas { display: block; max-width: 100%; }
+    .hint { color: var(--muted); font-size: 13px; text-align: center; padding: 30px 0; }
+    /* 图例 */
+    .legend { display: flex; gap: 16px; margin-top: 10px; font-size: 12px; color: var(--muted); flex-wrap: wrap; }
+    .legend i { display: inline-block; width: 14px; height: 3px; margin-right: 5px; vertical-align: middle; }
+    /* ===== 统计卡片 ===== */
+    .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 12px; }
+    .stat { background: #f4fafb; border: 1px solid var(--border); border-radius: 8px; padding: 10px; text-align: center; }
+    .stat .num { font-size: 22px; font-weight: bold; color: var(--primary); }
+    .stat .txt { font-size: 12px; color: var(--muted); margin-top: 2px; }
+    /* 人话解读 */
+    .explain {
+      background: #f4fafb; border-left: 4px solid var(--primary); border-radius: 6px;
+      padding: 10px 12px; font-size: 13px; line-height: 1.7;
+    }
+    .explain.warn { background: #fdf6ec; border-left-color: var(--warn); }
+    .explain.danger { background: #fdeeec; border-left-color: var(--danger); }
+    /* 目标清单 */
+    .item { border: 1px solid var(--border); border-radius: 8px; padding: 8px 10px; margin-bottom: 8px; font-size: 13px; }
+    .item .row { display: flex; justify-content: space-between; }
+    .tag { padding: 1px 7px; border-radius: 10px; font-size: 12px; }
+    .tag.hi { background: #e8f6ef; color: var(--ok); }
+    .tag.mid { background: #fdf3e3; color: var(--warn); }
+    .tag.low { background: #fdeeec; color: var(--danger); }
+    /* ===== 巡检看板 ===== */
+    .board { margin-top: 14px; }
+    table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    th, td { border-bottom: 1px solid var(--border); padding: 8px 6px; text-align: left; }
+    th { color: var(--muted); font-weight: normal; background: #f4fafb; }
+    .empty { color: var(--muted); font-size: 13px; text-align: center; padding: 16px 0; }
+    /* 断网提示条：后端不可用时显示，避免空白崩溃页面 */
+    .offline-banner {
+      display: none; margin-top: 14px; padding: 12px 16px; border-radius: 8px;
+      background: #fdeeec; border: 1px solid var(--danger); color: var(--danger);
+      font-size: 14px; font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+  <!-- ===== 顶部标题条：展示系统名称与后端服务状态 ===== -->
+  <div class="topbar">
+    <div>
+      <h1>河道漂浮垃圾检测 · 巡检看板</h1>
+      <div class="sub">YOLOv8n 实时识别 ｜ 全离线部署 ｜ 面向河道水面巡检与水环境治理</div>
+    </div>
+    <!-- 服务状态灯：绿=模型就绪，红=未连接 -->
+    <div class="status">
+      <span class="dot" id="statusDot"></span>
+      <span id="statusText">正在连接检测服务…</span>
+    </div>
+  </div>
+
+  <!-- 断网提示条：后端不可用时自动显示 -->
+  <div class="offline-banner" id="offlineBanner">
+    ⚠️ 后端检测服务未连接：请先在终端运行 backend_api/app.py 启动服务，识别功能暂不可用（历史台账仍可查看与导出）。
+  </div>
+
+  <!-- ===== 三栏主区：左操作 / 中画布 / 右结果 ===== -->
+  <div class="layout">
+    <!-- 左栏：上传与参数 -->
+    <div class="card">
+      <h2>① 上传巡检照片</h2>
+      <!-- 拖拽或点击上传区域 -->
+      <div class="dropzone" id="dropzone">
+        <div class="big">📷</div>
+        <div>拖拽河道照片到此处</div>
+        <div style="font-size:12px;margin-top:4px">或点击选择本地图片</div>
+      </div>
+      <!-- 隐藏的文件选择控件 -->
+      <input type="file" id="fileInput" accept="image/*" hidden />
+      <!-- 置信度阈值：河道场景可调，越低越容易报出弱目标 -->
+      <div class="field">
+        <label>识别灵敏度（置信度阈值）：<span id="confValue">0.25</span></label>
+        <input type="range" id="confSlider" min="0.05" max="0.8" step="0.05" value="0.25" />
+      </div>
+      <!-- 开始识别按钮 -->
+      <button class="btn" id="detectBtn" disabled>开始识别</button>
+      <!-- 重新识别按钮 -->
+      <button class="btn" id="resetBtn" style="background:#8aa3ab">清空结果</button>
+      <!-- 操作提示 -->
+      <div style="margin-top:12px;font-size:12px;color:var(--muted);line-height:1.7">
+        提示：把照片里的水面反光调低一些、让目标更完整，识别会更稳。
+      </div>
+    </div>
+
+    <!-- 中栏：识别结果画布 -->
+    <div class="card">
+      <h2>② 识别结果（框 = 漂浮垃圾位置，标签 = 置信度）</h2>
+      <div class="canvas-wrap">
+        <!-- 画布：先画原图，再叠加检测框 -->
+        <canvas id="view" width="900" height="500"></canvas>
+        <!-- 空状态提示 -->
+        <div class="hint" id="canvasHint">请先上传一张河道巡检照片</div>
+      </div>
+      <!-- 图例说明 -->
+      <div class="legend">
+        <span><i style="background:#2f8f5b"></i>高置信度（≥0.6，可直接派单）</span>
+        <span><i style="background:#e08a1e"></i>中置信度（0.3~0.6，建议复核）</span>
+        <span><i style="background:#d94f3d"></i>低置信度（&lt;0.3，可能是反光/水草）</span>
+      </div>
+    </div>
+
+    <!-- 右栏：统计与解读 -->
+    <div class="card">
+      <h2>③ 本次识别结果</h2>
+      <!-- 三宫格统计 -->
+      <div class="stats">
+        <div class="stat"><div class="num" id="countNum">0</div><div class="txt">漂浮物数量</div></div>
+        <div class="stat"><div class="num" id="maxNum">--</div><div class="txt">最高置信度</div></div>
+        <div class="stat"><div class="num" id="avgNum">--</div><div class="txt">平均置信度</div></div>
+      </div>
+      <!-- 人话解读：把专业指标翻译成巡检人员能看懂的结论 -->
+      <div class="explain" id="explain">等待识别…</div>
+      <!-- 目标明细列表 -->
+      <div style="margin-top:12px" id="itemList"></div>
+      <!-- 导出台账按钮：巡检记录直接交给保洁派工 -->
+      <button class="btn" id="exportBtn" style="background:var(--ok);margin-top:10px">导出台账 CSV（保洁派工）</button>
+    </div>
+  </div>
+
+  <!-- ===== 巡检看板：历史记录与累计统计 ===== -->
+  <div class="card board">
+    <h2>④ 巡检记录看板</h2>
+    <!-- 累计指标 -->
+    <div class="stats" style="grid-template-columns:repeat(4,1fr)">
+      <div class="stat"><div class="num" id="sumPhotos">0</div><div class="txt">累计巡检照片</div></div>
+      <div class="stat"><div class="num" id="sumObjects">0</div><div class="txt">累计发现漂浮物</div></div>
+      <div class="stat"><div class="num" id="sumReview">0</div><div class="txt">待人工复核</div></div>
+      <div class="stat"><div class="num" id="sumAvg">--</div><div class="txt">整体平均置信度</div></div>
+    </div>
+    <!-- 历史记录表 -->
+    <table>
+      <thead>
+        <tr><th>时间</th><th>照片</th><th>漂浮物</th><th>最高置信度</th><th>巡检结论</th></tr>
+      </thead>
+      <tbody id="historyBody">
+        <tr><td colspan="5" class="empty">暂无巡检记录，上传照片后自动记录</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+<script>
+/* ==================================================================
+   河道漂浮垃圾检测 · 前端脚本（前端展示工程师）
+   职责：上传照片 -> 调后端接口 -> 画框渲染 -> 统计与解读 -> 记录看板
+   全部为浏览器原生能力实现，不依赖任何框架
+   ================================================================== */
+
+/* 后端接口地址：与后端接口工程师的 Flask 服务保持一致 */
+const API_BASE = 'http://127.0.0.1:5000';
+/* 检测接口地址 */
+const API_DETECT = API_BASE + '/api/detect';
+/* 健康检查地址 */
+const API_HEALTH = API_BASE + '/api/health';
+/* 低置信度判定线：低于此值认为可能是反光或水草，需要人工复核 */
+const REVIEW_LINE = 0.6;
+
+/* 页面元素引用：统一在这里取，后面直接用 */
+const $ = (id) => document.getElementById(id);
+/* 拖拽上传区 */
+const dropzone = $('dropzone');
+/* 文件选择控件 */
+const fileInput = $('fileInput');
+/* 置信度滑块 */
+const confSlider = $('confSlider');
+/* 置信度数值显示 */
+const confValue = $('confValue');
+/* 开始识别按钮 */
+const detectBtn = $('detectBtn');
+/* 清空按钮 */
+const resetBtn = $('resetBtn');
+/* 画布 */
+const canvas = $('view');
+/* 画布 2D 上下文 */
+const ctx = canvas.getContext('2d');
+/* 空状态提示 */
+const canvasHint = $('canvasHint');
+/* 当前待识别的图片文件 */
+let currentFile = null;
+/* 当前图片的原始 Image 对象 */
+let currentImage = null;
+/* 巡检历史记录数组 */
+let history = [];
+/* 台账本地持久化：从 localStorage 恢复历史记录，刷新页面不丢失 */
+try {
+  history = JSON.parse(localStorage.getItem('riverPatrolHistory') || '[]');
+} catch (e) {
+  history = [];
+}
+
+/* ---------------------------------------------------------------
+   一、连接后端服务并显示状态
+   --------------------------------------------------------------- */
+function checkHealth() {
+  /* 轮询健康检查接口，判断模型是否就绪 */
+  fetch(API_HEALTH)
+    .then((res) => res.json())
+    .then((data) => {
+      /* 模型就绪：亮绿灯 */
+      $('statusDot').className = 'dot ok';
+      /* 状态文字带上传入参信息 */
+      $('statusText').textContent = '检测服务已就绪（离线模式）';
+      /* 隐藏断网提示条，恢复识别按钮 */
+      $('offlineBanner').style.display = 'none';
+      $('detectBtn').disabled = !currentFile;
+    })
+    .catch(() => {
+      /* 连不上：亮红灯并提示 */
+      $('statusDot').className = 'dot bad';
+      $('statusText').textContent = '未连接检测服务，请先启动后端';
+      /* 显示断网提示条，禁用识别按钮，避免点了没反应 */
+      $('offlineBanner').style.display = 'block';
+      $('detectBtn').disabled = true;
+    });
+}
+/* 页面加载后立即检查一次，之后每 5 秒检查一次 */
+checkHealth();
+setInterval(checkHealth, 5000);
+/* 页面加载时恢复历史台账（localStorage 持久化） */
+renderHistory();
+
+/* ---------------------------------------------------------------
+   二、上传与拖拽
+   --------------------------------------------------------------- */
+dropzone.addEventListener('click', () => fileInput.click());
+/* 拖拽进入时高亮 */
+dropzone.addEventListener('dragover', (e) => {
+  /* 必须阻止默认行为，否则浏览器会直接打开图片 */
+  e.preventDefault();
+  /* 加高亮类名 */
+  dropzone.classList.add('drag');
+});
+/* 拖拽离开时取消高亮 */
+dropzone.addEventListener('dragleave', () => dropzone.classList.remove('drag'));
+/* 拖拽放下时取文件 */
+dropzone.addEventListener('drop', (e) => {
+  /* 阻止默认行为 */
+  e.preventDefault();
+  /* 取消高亮 */
+  dropzone.classList.remove('drag');
+  /* 取第一个文件 */
+  const file = e.dataTransfer.files[0];
+  /* 有文件才处理 */
+  if (file) {
+    selectFile(file);
+  }
+});
+/* 选择文件 */
+fileInput.addEventListener('change', () => {
+  /* 取第一个文件 */
+  const file = fileInput.files[0];
+  /* 有文件才处理 */
+  if (file) {
+    selectFile(file);
+  }
+});
+
+/* 选中文件后：本地预览 + 打开识别按钮 */
+function selectFile(file) {
+  /* 记住文件 */
+  currentFile = file;
+  /* 用 FileReader 读取本地图片做预览，不经过后端 */
+  const reader = new FileReader();
+  /* 读取完成 */
+  reader.onload = (e) => {
+    /* 创建图片对象 */
+    const img = new Image();
+    /* 图片加载完成后再画，避免空白 */
+    img.onload = () => {
+      /* 保存图片对象 */
+      currentImage = img;
+      /* 画原图 */
+      drawImageOnly(img);
+      /* 打开识别按钮 */
+      detectBtn.disabled = false;
+      /* 更新提示文字 */
+      canvasHint.textContent = '照片已就绪，点击「开始识别」';
+    };
+    /* 指定图片源 */
+    img.src = e.target.result;
+  };
+  /* 读取二进制图片 */
+  reader.readAsDataURL(file);
+}
+
+/* ---------------------------------------------------------------
+   三、画布渲染
+   --------------------------------------------------------------- */
+/* 只画原图（未识别状态） */
+function drawImageOnly(img) {
+  /* 按图片比例自适应画布宽度，保持 900 宽 */
+  canvas.width = 900;
+  /* 高度按比例算，最多 620，避免过长 */
+  canvas.height = Math.min(620, Math.round(900 * img.height / img.width));
+  /* 清空画布 */
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  /* 画原图 */
+  ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+  /* 隐藏空提示 */
+  canvasHint.style.display = 'none';
+}
+
+/* 画原图 + 检测框 + 置信度标签 */
+function drawResult(img, items) {
+  /* 先画原图 */
+  drawImageOnly(img);
+  /* 逐个画检测框 */
+  items.forEach((it) => {
+    /* 百分比坐标换算成画布像素坐标 */
+    const x = (it.x - it.width / 2) / 100 * canvas.width;
+    const y = (it.y - it.height / 2) / 100 * canvas.height;
+    const w = it.width / 100 * canvas.width;
+    const h = it.height / 100 * canvas.height;
+    /* 按置信度分级取颜色：高=绿 中=橙 低=红 */
+    const color = it.confidence >= 0.6 ? '#2f8f5b' : (it.confidence >= 0.3 ? '#e08a1e' : '#d94f3d');
+    /* 线宽 */
+    ctx.lineWidth = 3;
+    /* 框颜色 */
+    ctx.strokeStyle = color;
+    /* 画矩形框 */
+    ctx.strokeRect(x, y, w, h);
+    /* 半透明填充，让目标区域更醒目 */
+    ctx.fillStyle = color + '22';
+    /* 填充框内 */
+    ctx.fillRect(x, y, w, h);
+    /* 画标签底色 */
+    const label = ' 漂浮垃圾 ' + it.confidence.toFixed(2);
+    /* 计算文字宽度 */
+    const tw = ctx.measureText(label).width + 12;
+    /* 标签位置：框的上方，贴边显示 */
+    const ly = y > 22 ? y - 22 : y;
+    /* 底色 */
+    ctx.fillStyle = color;
+    /* 画标签背景 */
+    ctx.fillRect(x, ly, tw, 20);
+    /* 文字颜色 */
+    ctx.fillStyle = '#ffffff';
+    /* 字体 */
+    ctx.font = '13px Microsoft YaHei';
+    /* 画文字 */
+    ctx.fillText(label, x + 6, ly + 14);
+  });
+}
+
+/* ---------------------------------------------------------------
+   四、发起识别请求
+   --------------------------------------------------------------- */
+detectBtn.addEventListener('click', () => {
+  /* 没有文件直接返回 */
+  if (!currentFile) { return; }
+  /* 按钮置灰防重复点击 */
+  detectBtn.disabled = true;
+  /* 提示正在识别 */
+  $('explain').textContent = '正在识别中…';
+  /* 组装表单数据 */
+  const form = new FormData();
+  /* 图片文件放字段 image */
+  form.append('image', currentFile);
+  /* 带上置信度阈值 */
+  form.append('conf', confSlider.value);
+  /* 调后端接口 */
+  fetch(API_DETECT, { method: 'POST', body: form })
+    .then((res) => res.json())
+    .then((data) => {
+      /* 接口报错时把后端的中文提示显示出来 */
+      if (data.status !== 'ok') {
+        $('explain').className = 'explain danger';
+        $('explain').textContent = '识别失败：' + (data.message || '未知错误');
+        return;
+      }
+      /* 渲染结果 */
+      renderResult(data);
+    })
+    .catch(() => {
+      /* 网络异常 */
+      $('explain').className = 'explain danger';
+      $('explain').textContent = '识别失败：连不上后端服务，请确认 后端接口工程师的服务已启动';
+    })
+    .finally(() => {
+      /* 恢复按钮 */
+      detectBtn.disabled = false;
+    });
+});
+
+/* 滑块数值实时显示 */
+confSlider.addEventListener('input', () => {
+  /* 更新数值 */
+  confValue.textContent = confSlider.value;
+});
+
+/* ---------------------------------------------------------------
+   五、结果展示：统计 + 人话解读 + 明细
+   --------------------------------------------------------------- */
+function renderResult(data) {
+  /* 取检测项 */
+  const items = data.items || [];
+  /* 画框 */
+  if (currentImage) {
+    drawResult(currentImage, items);
+  }
+  /* 更新三个统计数字 */
+  $('countNum').textContent = data.summary.count;
+  $('maxNum').textContent = data.summary.maxConfidence ? data.summary.maxConfidence.toFixed(2) : '--';
+  $('avgNum').textContent = data.summary.avgConfidence ? data.summary.avgConfidence.toFixed(2) : '--';
+  /* 生成人话解读 */
+  $('explain').className = 'explain';
+  $('explain').innerHTML = explainText(data);
+  /* 渲染目标明细列表 */
+  const box = $('itemList');
+  /* 先清空 */
+  box.innerHTML = '';
+  /* 没有目标时给一句提示 */
+  if (!items.length) {
+    box.innerHTML = '<div class="empty">本次未发现漂浮垃圾</div>';
+  } else {
+    /* 逐条渲染 */
+    items.forEach((it, idx) => {
+      /* 置信度分级标签 */
+      const level = it.confidence >= 0.6 ? 'hi' : (it.confidence >= 0.3 ? 'mid' : 'low');
+      const levelText = it.confidence >= 0.6 ? '可直接派单' : (it.confidence >= 0.3 ? '建议复核' : '可能误报');
+      /* 拼一条明细 */
+      const div = document.createElement('div');
+      div.className = 'item';
+      div.innerHTML =
+        '<div class="row"><b>目标 ' + (idx + 1) + '：' + it.target + '</b>' +
+        '<span class="tag ' + level + '">' + it.confidence.toFixed(2) + '</span></div>' +
+        '<div style="color:var(--muted);margin-top:4px">位置：横向 ' + it.x + '% / 纵向 ' + it.y + '% ｜ ' + levelText + '</div>';
+      /* 追加到列表 */
+      box.appendChild(div);
+    });
+  }
+  /* 写入巡检记录 */
+  addHistory(data);
+}
+
+/* 把专业指标翻译成巡检人员看得懂的话 */
+function explainText(data) {
+  /* 没有目标 */
+  if (!data.summary.count) {
+    return '✅ 本次巡检<b>未发现漂浮垃圾</b>，该河段水面状况良好，建议按常规频次继续巡查。';
+  }
+  /* 高置信目标数量 */
+  const high = data.items.filter((i) => i.confidence >= REVIEW_LINE).length;
+  /* 低置信目标数量（可能是反光或水草） */
+  const low = data.items.filter((i) => i.confidence < 0.3).length;
+  /* 总数 */
+  const n = data.summary.count;
+  /* 有高置信目标：可以派单 */
+  if (high > 0) {
+    let text = '🚨 本次巡检发现 <b>' + n + ' 处漂浮物</b>，其中 <b>' + high + ' 处</b>位置明确、置信度较高，';
+    text += '建议在 <b>24 小时内</b>安排打捞。';
+    /* 附带提醒低置信目标 */
+    if (low > 0) {
+      text += '<br>⚠️ 另有 ' + low + ' 处低置信目标，<b>可能是水面反光或水草</b>，请人工到现场复核后再计入台账。';
+    }
+    return text;
+  }
+  /* 只有中低置信目标：提示复核 */
+  return '⚠️ 本次巡检疑似发现 <b>' + n + ' 处漂浮物</b>，但置信度偏低，<b>可能是反光、波纹或水草造成</b>，' +
+    '建议先人工复核，确认后再安排清理。';
+}
+
+/* ---------------------------------------------------------------
+   六、巡检记录看板
+   --------------------------------------------------------------- */
+function addHistory(data) {
+  /* 拼一条记录 */
+  const conf = data.summary.maxConfidence || 0;
+  const record = {
+    time: new Date().toLocaleString('zh-CN', { hour12: false }),
+    name: data.image.name,
+    count: data.summary.count,
+    conf: conf,
+    avg: data.summary.avgConfidence || 0,
+    low: data.items.filter((i) => i.confidence < REVIEW_LINE).length,
+  };
+  /* 插到最前面 */
+  history.unshift(record);
+  /* 台账写入 localStorage 本地持久化：刷新页面记录不丢失 */
+  localStorage.setItem('riverPatrolHistory', JSON.stringify(history));
+  /* 渲染表格 */
+  renderHistory();
+}
+
+/* 渲染历史表格与累计指标 */
+function renderHistory() {
+  const body = $('historyBody');
+  /* 没有记录时显示空状态 */
+  if (!history.length) {
+    body.innerHTML = '<tr><td colspan="5" class="empty">暂无巡检记录，上传照片后自动记录</td></tr>';
+  } else {
+    /* 拼表格行 */
+    body.innerHTML = history.map((r) => {
+      /* 根据数量给结论 */
+      const concl = r.count === 0 ? '水面正常' : (r.low > 0 ? '需复核' : '需清理');
+      return '<tr><td>' + r.time + '</td><td>' + r.name + '</td><td>' + r.count +
+        '</td><td>' + (r.conf ? r.conf.toFixed(2) : '--') + '</td><td>' + concl + '</td></tr>';
+    }).join('');
+  }
+  /* 累计指标 */
+  $('sumPhotos').textContent = history.length;
+  /* 累计目标数 */
+  $('sumObjects').textContent = history.reduce((s, r) => s + r.count, 0);
+  /* 累计待复核数 */
+  $('sumReview').textContent = history.reduce((s, r) => s + r.low, 0);
+  /* 整体平均置信度 */
+  const avg = history.length ? history.reduce((s, r) => s + r.avg, 0) / history.length : 0;
+  $('sumAvg').textContent = history.length ? avg.toFixed(2) : '--';
+}
+
+/* ---------------------------------------------------------------
+   七、导出台账 CSV（保洁派工）
+   --------------------------------------------------------------- */
+$('exportBtn').addEventListener('click', () => {
+  /* 没有记录时给出提示 */
+  if (!history.length) {
+    alert('暂无巡检记录，先上传照片完成一次识别');
+    return;
+  }
+  /* 组装 CSV 表头与数据行 */
+  const rows = [['时间', '照片', '漂浮物数', '最高置信度', '待复核数', '巡检结论']];
+  history.forEach((r) => {
+    /* 结论口径与看板一致：无目标=水面正常，有低置信=需复核，其余=需清理 */
+    const concl = r.count === 0 ? '水面正常' : (r.low > 0 ? '需复核' : '需清理');
+    rows.push([r.time, r.name, r.count, r.conf ?? '', r.low, concl]);
+  });
+  /* 加 BOM 头，防止 Excel 打开中文乱码 */
+  const csv = '\ufeff' + rows.map((r) => r.join(',')).join('\n');
+  /* 生成下载链接并触发下载 */
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = '河道巡检台账.csv';
+  a.click();
+});
+
+/* ---------------------------------------------------------------
+   八、清空
+   --------------------------------------------------------------- */
+resetBtn.addEventListener('click', () => {
+  /* 清空文件与图片 */
+  currentFile = null;
+  currentImage = null;
+  /* 清空画布 */
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  /* 显示提示 */
+  canvasHint.style.display = 'block';
+  canvasHint.textContent = '请先上传一张河道巡检照片';
+  /* 统计归零 */
+  $('countNum').textContent = '0';
+  $('maxNum').textContent = '--';
+  $('avgNum').textContent = '--';
+  $('explain').className = 'explain';
+  $('explain').textContent = '等待识别…';
+  /* 清空明细 */
+  $('itemList').innerHTML = '';
+  /* 禁用按钮 */
+  detectBtn.disabled = true;
+});
+</script>
+</body>
+</html>

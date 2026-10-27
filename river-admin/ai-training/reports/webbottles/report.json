@@ -1,0 +1,170 @@
+[
+ {
+  "no": 1,
+  "file": "D:\\ZM\\河道\\river-admin\\ai-training\\reports\\webbottles\\images\\train2017_000000209548.jpg",
+  "detections": 0,
+  "best_iou": 0.0,
+  "best_conf": 0.0
+ },
+ {
+  "no": 2,
+  "file": "D:\\ZM\\河道\\river-admin\\ai-training\\reports\\webbottles\\images\\train2017_000000144467.jpg",
+  "detections": 0,
+  "best_iou": 0.0,
+  "best_conf": 0.0
+ },
+ {
+  "no": 3,
+  "file": "D:\\ZM\\河道\\river-admin\\ai-training\\reports\\webbottles\\images\\train2017_000000321332.jpg",
+  "detections": 1,
+  "best_iou": 0.894,
+  "best_conf": 0.636
+ },
+ {
+  "no": 4,
+  "file": "D:\\ZM\\河道\\river-admin\\ai-training\\reports\\webbottles\\images\\train2017_000000463865.jpg",
+  "detections": 0,
+  "best_iou": 0.0,
+  "best_conf": 0.0
+ },
+ {
+  "no": 5,
+  "file": "D:\\ZM\\河道\\river-admin\\ai-training\\reports\\webbottles\\images\\train2017_000000328780.jpg",
+  "detections": 0,
+  "best_iou": 0.0,
+  "best_conf": 0.0
+ },
+ {
+  "no": 6,
+  "file": "D:\\ZM\\河道\\river-admin\\ai-training\\reports\\webbottles\\images\\train2017_000000299085.jpg",
+  "detections": 1,
+  "best_iou": 0.0,
+  "best_conf": 0.0
+ },
+ {
+  "no": 7,
+  "file": "D:\\ZM\\河道\\river-admin\\ai-training\\reports\\webbottles\\images\\train2017_000000488723.jpg",
+  "detections": 0,
+  "best_iou": 0.0,
+  "best_conf": 0.0
+ },
+ {
+  "no": 8,
+  "file": "D:\\ZM\\河道\\river-admin\\ai-training\\reports\\webbottles\\images\\train2017_000000281679.jpg",
+  "detections": 2,
+  "best_iou": 0.736,
+  "best_conf": 0.738
+ },
+ {
+  "no": 9,
+  "file": "D:\\ZM\\河道\\river-admin\\ai-training\\reports\\webbottles\\images\\train2017_000000370209.jpg",
+  "detections": 2,
+  "best_iou": 0.0,
+  "best_conf": 0.0
+ },
+ {
+  "no": 10,
+  "file": "D:\\ZM\\河道\\river-admin\\ai-training\\reports\\webbottles\\images\\train2017_000000502959.jpg",
+  "detections": 0,
+  "best_iou": 0.0,
+  "best_conf": 0.0
+ },
+ {
+  "no": 11,
+  "file": "D:\\ZM\\河道\\river-admin\\ai-training\\reports\\webbottles\\images\\train2017_000000043306.jpg",
+  "detections": 0,
+  "best_iou": 0.0,
+  "best_conf": 0.0
+ },
+ {
+  "no": 12,
+  "file": "D:\\ZM\\河道\\river-admin\\ai-training\\reports\\webbottles\\images\\train2017_000000554169.jpg",
+  "detections": 0,
+  "best_iou": 0.0,
+  "best_conf": 0.0
+ },
+ {
+  "no": 13,
+  "file": "D:\\ZM\\河道\\river-admin\\ai-training\\reports\\webbottles\\images\\train2017_000000384302.jpg",
+  "detections": 0,
+  "best_iou": 0.0,
+  "best_conf": 0.0
+ },
+ {
+  "no": 14,
+  "file": "D:\\ZM\\河道\\river-admin\\ai-training\\reports\\webbottles\\images\\train2017_000000268516.jpg",
+  "detections": 0,
+  "best_iou": 0.0,
+  "best_conf": 0.0
+ },
+ {
+  "no": 15,
+  "file": "D:\\ZM\\河道\\river-admin\\ai-training\\reports\\webbottles\\images\\train2017_000000384675.jpg",
+  "detections": 1,
+  "best_iou": 0.732,
+  "best_conf": 0.384
+ },
+ {
+  "no": 16,
+  "file": "D:\\ZM\\河道\\river-admin\\ai-training\\reports\\webbottles\\images\\train2017_000000205299.jpg",
+  "detections": 1,
+  "best_iou": 0.633,
+  "best_conf": 0.267
+ },
+ {
+  "no": 17,
+  "file": "D:\\ZM\\河道\\river-admin\\ai-training\\reports\\webbottles\\images\\train2017_000000575206.jpg",
+  "detections": 0,
+  "best_iou": 0.0,
+  "best_conf": 0.0
+ },
+ {
+  "no": 18,
+  "file": "D:\\ZM\\河道\\river-admin\\ai-training\\reports\\webbottles\\images\\train2017_000000336314.jpg",
+  "detections": 0,
+  "best_iou": 0.0,
+  "best_conf": 0.0
+ },
+ {
+  "no": 19,
+  "file": "D:\\ZM\\河道\\river-admin\\ai-training\\reports\\webbottles\\images\\train2017_000000293165.jpg",
+  "detections": 0,
+  "best_iou": 0.0,
+  "best_conf": 0.0
+ },
+ {
+  "no": 20,
+  "file": "D:\\ZM\\河道\\river-admin\\ai-training\\reports\\webbottles\\images\\val2017_000000287714.jpg",
+  "detections": 0,
+  "best_iou": 0.0,
+  "best_conf": 0.0
+ },
+ {
+  "no": 21,
+  "file": "D:\\ZM\\河道\\river-admin\\ai-training\\reports\\webbottles\\images\\train2017_000000106849.jpg",
+  "detections": 0,
+  "best_iou": 0.0,
+  "best_conf": 0.0
+ },
+ {
+  "no": 22,
+  "file": "D:\\ZM\\河道\\river-admin\\ai-training\\reports\\webbottles\\images\\train2017_000000041398.jpg",
+  "detections": 0,
+  "best_iou": 0.0,
+  "best_conf": 0.0
+ },
+ {
+  "no": 23,
+  "file": "D:\\ZM\\河道\\river-admin\\ai-training\\reports\\webbottles\\images\\train2017_000000176330.jpg",
+  "detections": 0,
+  "best_iou": 0.0,
+  "best_conf": 0.0
+ },
+ {
+  "no": 24,
+  "file": "D:\\ZM\\河道\\river-admin\\ai-training\\reports\\webbottles\\images\\train2017_000000310463.jpg",
+  "detections": 1,
+  "best_iou": 0.0,
+  "best_conf": 0.0
+ }
+]

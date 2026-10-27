@@ -1,0 +1,149 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --rv-primary: #1d4ed8;
+  --rv-primary-soft: #eff6ff;
+  --rv-success: #16a34a;
+  --rv-warning: #f59e0b;
+  --rv-danger: #dc2626;
+  --rv-info: #64748b;
+  --rv-text: #0f172a;
+  --rv-text-secondary: #64748b;
+  --rv-border: #e2e8f0;
+  --rv-bg: #f1f5f9;
+  --rv-surface: #ffffff;
+  --rv-radius: 10px;
+  --rv-shadow: 0 1px 2px rgba(15, 23, 42, 0.04), 0 8px 24px rgba(15, 23, 42, 0.05);
+}
+
+html,
+body,
+#app {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: 'PingFang SC', 'Microsoft YaHei', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+  background-color: var(--rv-bg);
+  color: var(--rv-text);
+  font-size: 14px;
+  -webkit-font-smoothing: antialiased;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+/* ------------------------------ 通用容器 ------------------------------ */
+.rv-page {
+  padding: 16px;
+}
+
+.rv-card {
+  background: var(--rv-surface);
+  border: 1px solid var(--rv-border);
+  border-radius: var(--rv-radius);
+  box-shadow: var(--rv-shadow);
+}
+
+.rv-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 18px;
+  border-bottom: 1px solid var(--rv-border);
+}
+
+.rv-card-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--rv-text);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.rv-card-title::before {
+  content: '';
+  width: 3px;
+  height: 14px;
+  border-radius: 2px;
+  background: linear-gradient(180deg, #3b82f6, #1d4ed8);
+}
+
+.rv-card-body {
+  padding: 16px 18px;
+}
+
+/* ------------------------------ 文本辅助 ------------------------------ */
+.rv-text-secondary {
+  color: var(--rv-text-secondary);
+  font-size: 13px;
+}
+
+.rv-num {
+  font-family: 'DIN Alternate', 'Bahnschrift', 'Helvetica Neue', Arial, sans-serif;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ------------------------------ 滚动条 ------------------------------ */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+/* ------------------------------ Element 覆写 ------------------------------ */
+.el-table {
+  --el-table-border-color: var(--rv-border);
+  --el-table-header-bg-color: #f8fafc;
+}
+
+.el-table th.el-table__cell {
+  font-weight: 600;
+  color: #334155;
+}
+
+.el-button--primary {
+  --el-button-bg-color: var(--rv-primary);
+  --el-button-border-color: var(--rv-primary);
+  --el-button-hover-bg-color: #2563eb;
+  --el-button-hover-border-color: #2563eb;
+}
+
+.el-pagination {
+  justify-content: flex-end;
+  padding: 14px 0 0;
+}
+
+/* ------------------------------ 页面切换动画 ------------------------------ */
+.fade-slide-enter-active,
+.fade-slide-leave-active {
+  transition: all 0.22s ease;
+}
+
+.fade-slide-enter-from {
+  opacity: 0;
+  transform: translateY(12px);
+}
+
+.fade-slide-leave-to {
+  opacity: 0;
+  transform: translateY(-8px);
+}

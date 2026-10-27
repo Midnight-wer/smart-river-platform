@@ -1,0 +1,6 @@
+# 河道漂浮垃圾检测数据集（由 数据标注工程师的数据整理脚本自动生成）
+path: D:/ZM/河道/river_plastic_detect/dataset
+train: train/images
+val: val/images
+nc: 1
+names: {0: '漂浮垃圾'}

@@ -1,0 +1,96 @@
+# Tail job: wait for the near-field training to finish, then evaluate -> swap model -> self-check
+$ErrorActionPreference = 'Continue'
+$root = Split-Path -Parent $PSScriptRoot
+$logDir = Join-Path $root 'logs'
+New-Item -ItemType Directory -Force -Path $logDir | Out-Null
+
+function Log($msg) { Write-Host "[$(Get-Date -Format 'HH:mm:ss')] $msg" }
+
+$runDir = Join-Path $root 'runs\detect\runs\plastic-bottle-near-coco-512'
+$weights = Join-Path $runDir 'weights\best.pt'
+
+Log 'Waiting for near-field training to finish...'
+while ($true) {
+    $running = @(Get-CimInstance Win32_Process -Filter "Name='python.exe'" |
+        Where-Object { $_.CommandLine -match 'yolo' -and $_.CommandLine -match 'train' }).Count
+    if ($running -eq 0) { break }
+    Start-Sleep -Seconds 60
+}
+
+if (-not (Test-Path $weights)) {
+    Log "!! best.pt not found: $weights"
+    exit 1
+}
+Log ("Training done. weights: " + [math]::Round((Get-Item $weights).Length / 1MB, 2) + " MB")
+
+# 1) evaluate
+Push-Location $root
+Log 'Evaluating near-field model...'
+python scripts/eval_near_model.py --weights $weights 2>&1 |
+    Tee-Object -FilePath (Join-Path $logDir 'eval_near.log')
+Log "eval exit code: $LASTEXITCODE"
+
+# 2) publish model
+$nearModel = Join-Path $root 'models\plastic-bottle-near.pt'
+Copy-Item $weights $nearModel -Force
+Log ("Published model -> " + $nearModel)
+
+# 3) export onnx
+python scripts/export_onnx.py --weights $weights --imgsz 512 --output (Join-Path $root 'models\plastic-bottle-near.onnx') 2>&1 |
+    Tee-Object -FilePath (Join-Path $logDir 'export_near_onnx.log')
+Log "onnx export exit code: $LASTEXITCODE"
+Pop-Location
+
+# 4) restart detect server
+Log 'Restarting detect server...'
+Get-CimInstance Win32_Process -Filter "Name='python.exe'" |
+    Where-Object { $_.CommandLine -match 'detect_server' } |
+    ForEach-Object { Stop-Process -Id $_.ProcessId -Force }
+Start-Sleep -Seconds 3
+$proc = Start-Process python -ArgumentList 'services/detect_server.py', '--port', '8000' `
+    -WorkingDirectory $root -WindowStyle Hidden `
+    -RedirectStandardOutput (Join-Path $logDir 'detect-server.log') `
+    -RedirectStandardError (Join-Path $logDir 'detect-server.err.log') -PassThru
+Log "detect server pid=$($proc.Id)"
+
+$healthy = $false
+for ($i = 0; $i -lt 40; $i++) {
+    Start-Sleep -Seconds 5
+    try {
+        $h = Invoke-RestMethod -Uri 'http://127.0.0.1:8000/health' -TimeoutSec 10
+        Log "health ok: model=$($h.model) offline=$($h.offline)"
+        $healthy = $true
+        break
+    } catch { }
+}
+if (-not $healthy) { Log 'WARN: detect server not healthy' }
+
+# 5) self check
+Push-Location $root
+Log 'Running self check...'
+python scripts/self_check.py 2>&1 | Tee-Object -FilePath (Join-Path $logDir 'self_check.log')
+Log "self_check exit code: $LASTEXITCODE"
+Pop-Location
+
+# 6) browser end-to-end check
+$env:NODE_PATH = 'D:\Systemp\Temp\pwtest\node_modules'
+$toolDir = Split-Path -Parent $env:NODE_PATH
+if (Test-Path (Join-Path $env:NODE_PATH 'playwright-core')) {
+    # 训练期间 dev server 可能被手动关闭，自检前按需拉起
+    $devRunning = @(Get-CimInstance Win32_Process -Filter "Name='node.exe'" |
+        Where-Object { $_.CommandLine -match 'vite' }).Count
+    if ($devRunning -eq 0) {
+        Log 'Starting Vite dev server for browser check...'
+        Start-Process cmd -ArgumentList '/c', 'npm run dev' -WorkingDirectory (Join-Path $root '..') -WindowStyle Hidden
+        Start-Sleep -Seconds 25
+    }
+    Log 'Running browser end-to-end check...'
+    $checkScript = Join-Path $toolDir 'browser_check.mjs'
+    Copy-Item (Join-Path $root 'scripts\browser_check.mjs') $checkScript -Force
+    Push-Location $toolDir
+    node $checkScript 2>&1 | Tee-Object -FilePath (Join-Path $logDir 'browser_check.log')
+    Log "browser_check exit code: $LASTEXITCODE"
+    Pop-Location
+}
+
+Log 'ALL DONE'

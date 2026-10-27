@@ -1,0 +1,689 @@
+ 智河通平台 · 项目操作文档
+
+本文档面向开发、运维人员，覆盖环境准备、服务启动、数据库初始化、接口调用、AI 模型、定时任务、常见问题等。
+业务功能介绍请参阅 [river-admin/操作手册.md](./river-admin/操作手册.md)。
+
+---
+
+ 目录
+
+1. [项目结构](1-项目结构)
+2. [环境准备](2-环境准备)
+3. [数据库初始化](3-数据库初始化)
+4. [服务启动](4-服务启动)
+5. [服务访问地址](5-服务访问地址)
+6. [API 调用示例](6-api-调用示例)
+7. [AI 检测模型](7-ai-检测模型)
+8. [定时任务](8-定时任务)
+9. [WebSocket 实时推送](9-websocket-实时推送)
+10. [数据导出](10-数据导出)
+11. [文件存储](11-文件存储)
+12. [常见问题](12-常见问题)
+13. [停止服务](13-停止服务)
+
+---
+
+ 1. 项目结构
+
+
+　　　d:\河道治理\
+├── river-server\           后端服务（Spring Boot 2.7.18 + JDK 1.8）
+├── river-admin\            管理后台前端（Vue 3 + Vite 5 + TailwindCSS）
+├── river-dashboard\       数据看板大屏（Vue 3 + ECharts + echarts-gl）
+├── river-ai\              AI 服务（FastAPI + YOLOv8 + LSTM）
+├── river-public\          公众端小程序（uni-app + Vue 3）
+├── 测试照片\               检测模型测试图片
+├── init_db.py             数据库初始化辅助脚本
+├── 技术文档.md             全栈技术架构文档
+├── 智河通-优化技术方案.md   优化方案
+├── 漂浮物检测模型技术方案.md  AI 模型方案
+└── 操作文档.md             本文档
+
+
+ 各子项目技术栈
+
+| 子项目 | 技术栈 | 端口 |
+|--------|--------|------|
+| river-server | Spring Boot 2.7.18 + MyBatis-Plus 3.5.3 + Druid + JWT + WebSocket | 8084 |
+| river-admin | Vue 3.4 + TypeScript + Vite 5 + Pinia + TailwindCSS + ECharts | 5173 |
+| river-dashboard | Vue 3.4 + Vite 5 + TailwindCSS + ECharts + echarts-gl | 5174 |
+| river-ai | FastAPI + Ultralytics 8.4 + PyTorch 2.14 + OpenCV | 8001 |
+| river-public | uni-app + Vue 3 + TypeScript | 微信小程序 |
+
+---
+
+ 2. 环境准备
+
+ 2.1 必备软件清单
+
+| 软件 | 版本要求 | 本机路径（参考） |
+|------|---------|------------------|
+| JDK | 1.8.0_91（必须，版本过低证书会报错） | `D:\soft\jdk1.8.0_91\jdk1.8.0_91` |
+| Node.js | v24.18.0+ | `D:\soft\Nodejs\node.exe` |
+| Python | 3.10.11 | 系统 PATH |
+| MySQL | 5.7.26+（phpStudy 自带） | `D:\soft\phpstudy_pro\Extensions\MySQL5.7.26` |
+| Maven | 3.8.6（mvnw 自带） | 项目内 `.mvn\wrapper\` |
+| Navicat | 16（可选，可视化管理数据库） | `D:\soft\Navicat Premium 16\navicat.exe` |
+
+ 2.2 JDK 环境变量
+
+PowerShell 中临时设置（关闭终端失效）：
+
+powershell
+$env:JAVA_HOME="D:\soft\jdk1.8.0_91\jdk1.8.0_91"
+$env:Path="$env:JAVA_HOME\bin;$env:Path"
+java -version   验证
+
+
+ 2.3 Python 依赖（river-ai 首次运行）
+
+powershell
+pip install ultralytics loguru opencv-python fastapi uvicorn pydantic -i https://pypi.tuna.tsinghua.edu.cn/simple
+
+
+ 2.4 前端依赖（首次运行）
+
+powershell
+ 管理后台
+cd d:\河道治理\river-admin
+npm install
+
+ 数据看板
+cd d:\河道治理\river-dashboard
+npm install
+
+
+ 2.5 Maven 镜像配置（避免 SSL 证书错误）
+
+JDK 1.8.0_91 的 cacerts 较旧，访问 maven.apache.org 会 SSL 失败。已写入全局配置：
+
+- 配置文件：`C:\Users\Lenovo\.m2\settings.xml`
+- 镜像源：阿里云 `https://maven.aliyun.com/repository/public`
+- 项目内 Wrapper 配置：[river-server/.mvn/wrapper/maven-wrapper.properties](./river-server/.mvn/wrapper/maven-wrapper.properties) 已改为阿里云源
+
+如需重新生成，参考以下内容写入 `C:\Users\Lenovo\.m2\settings.xml`：
+
+xml
+<settings xmlns="http://maven.apache.org/SETTINGS/1.0.0"
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+xsi:schemaLocation="http://maven.apache.org/SETTINGS/1.0.0 http://maven.apache.org/xsd/settings-1.0.0.xsd">
+<mirrors>
+<mirror>
+<id>aliyun</id>
+<name>Aliyun Public Mirror</name>
+<url>https://maven.aliyun.com/repository/public</url>
+<mirrorOf>central</mirrorOf>
+</mirror>
+</mirrors>
+</settings>
+
+
+---
+
+ 3. 数据库初始化
+
+ 3.1 启动 MySQL
+
+通过 phpStudy 启动 MySQL 5.7.26，或直接运行：
+
+powershell
+Start-Process "D:\soft\phpstudy_pro\Extensions\MySQL5.7.26\bin\mysqld.exe"
+
+
+ 3.2 数据库配置
+
+后端配置文件 [river-server/src/main/resources/application.yml](./river-server/src/main/resources/application.yml))：
+
+yaml
+spring:
+datasource:
+url: jdbc:mysql://localhost:3306/river_governance?...
+username: root
+password: root
+
+
+如需修改密码，编辑上述 yml 后重新打包。
+
+ 3.3 执行 SQL 脚本
+
+按顺序执行（用 Navicat 或 mysql 命令行）：
+
+| 顺序 | 脚本 | 说明 |
+|------|------|------|
+| 1 | [river-server/sql/init.sql](./river-server/sql/init.sql) | 创建数据库 + 19 张核心表 + 初始数据 |
+| 2 | [river-server/sql/news.sql](./river-server/sql/news.sql) | 新闻资讯表 |
+| 3 | [river-server/sql/security_question.sql](./river-server/sql/security_question.sql) | 密保问题模板 |
+| 4 | [river-server/sql/migration_extension_features.sql](./river-server/sql/migration_extension_features.sql) | 扩展功能表（sys_file、notify_message） |
+
+命令行执行示例：
+
+powershell
+$mysql = "D:\soft\phpstudy_pro\Extensions\MySQL5.7.26\bin\mysql.exe"
+& $mysql -uroot -proot -e "CREATE DATABASE IF NOT EXISTS river_governance DEFAULT CHARACTER SET utf8mb4;"
+Get-ChildItem d:\河道治理\river-server\sql\*.sql | Sort-Object Name | ForEach-Object {
+Write-Host "执行: $($_.Name)"
+& $mysql -uroot -proot river_governance -e "source $($_.FullName)"
+}
+
+
+ 3.4 辅助初始化脚本
+
+项目根目录的 [init_db.py](./init_db.py) 可快速初始化数据库，运行方式：
+
+powershell
+cd d:\河道治理
+python init_db.py
+
+
+---
+
+ 4. 服务启动
+
+ 4.1 启动顺序
+
+推荐按以下顺序启动（后端 → AI → 前端）：
+
+　　　1.MySQL（数据库）
+　　　2.river-server（后端 API）
+　　　3.river-ai（AI 服务，可选）
+　　　4.river-admin（管理后台）
+　　　5.river-dashboard（数据看板）
+
+ 4.2 启动后端服务（river-server）
+
+**方式 A：命令行启动 jar 包（推荐）**
+
+powershell
+ 1. 设置 JAVA_HOME
+$env:JAVA_HOME="D:\soft\jdk1.8.0_91\jdk1.8.0_91"
+$env:Path="$env:JAVA_HOME\bin;$env:Path"
+
+ 2. Maven 打包（首次或代码变更后执行）
+cd d:\河道治理\river-server
+.\mvnw.cmd clean package "-DskipTests" "-Dmaven.test.skip=true" "-Dmaven.wagon.http.ssl.insecure=true" "-Dmaven.wagon.http.ssl.allowall=true" -q
+
+ 3. 启动 jar
+java -jar target\river-server-1.0.0.jar
+
+
+**方式 B：IDEA 中启动**
+
+用 IntelliJ IDEA 打开 `d:\河道治理\river-server`，在 Project Structure 中配置 JDK 1.8，然后运行主类 `com.zhihetong.river.RiverServerApplication`。
+
+ 4.3 启动 AI 服务（river-ai）
+
+powershell
+cd d:\河道治理\river-ai
+python -m services.main
+
+
+启动后访问 http://localhost:8001/docs 查看 API 文档。
+
+**注意**：ultralytics 默认会在 `C:\Users\Lenovo\AppData\Roaming\Ultralytics` 创建配置目录，沙盒环境下可能被拒绝。如遇 `PermissionError`，设置环境变量重定向：
+powershell
+$env:YOLO_CONFIG_DIR="d:\河道治理\river-ai\.ultralytics"
+
+
+ 4.4 启动管理后台（river-admin）
+
+powershell
+cd d:\河道治理\river-admin
+npm run dev
+
+
+ 4.5 启动数据看板（river-dashboard）
+
+powershell
+cd d:\河道治理\river-dashboard
+npm run dev
+
+
+ 4.6 启动公众端小程序（river-public）
+
+powershell
+cd d:\河道治理\river-public
+npm install
+npm run dev:mp-weixin
+
+生成产物在 `dist/dev/mpidouyin/mp-weixin/`，用微信开发者工具导入该目录即可预览。
+
+---
+
+ 5. 服务访问地址
+
+| 服务 | 地址 | 说明 |
+|------|------|------|
+| 后端 API 根路径 | http://localhost:8084/api/v1 | context-path=/api/v1 |
+| 接口文档（Knife4j） | http://localhost:8084/api/v1/doc.html | Swagger UI |
+| 管理后台 | http://localhost:5173 | PC 管理端 |
+| 数据看板大屏 | http://localhost:5174 | 大屏展示 |
+| AI 服务 | http://localhost:8001 | FastAPI |
+| AI API 文档 | http://localhost:8001/docs | Swagger UI |
+| AI 健康检查 | http://localhost:8001/health | 返回 `{"status":"healthy"}` |
+
+---
+
+ 6. API 调用示例
+
+ 6.1 登录获取 JWT Token
+
+powershell
+$body = '{"username":"admin","password":"123456"}'
+$response = Invoke-WebRequest -Uri "http://localhost:8084/api/v1/auth/login" `
+-Method POST -ContentType "application/json" -Body $body -UseBasicParsing
+$token = ($response.Content | ConvertFrom-Json).data.token
+Write-Host "Token: $token"
+
+
+ 6.2 携带 Token 调用接口
+
+powershell
+$headers = @{ "Authorization" = "Bearer $token" }
+Invoke-WebRequest -Uri "http://localhost:8084/api/v1/rivers" `
+-Headers $headers -UseBasicParsing
+
+
+ 6.3 主要 API 端点
+
+| 模块 | 方法 | 路径 | 说明 |
+|------|------|------|------|
+| 认证 | POST | /auth/login | 登录 |
+| 认证 | POST | /auth/register | 注册 |
+| 用户 | GET | /users | 用户列表 |
+| 河道 | GET | /rivers | 河道列表 |
+| 河道 | GET | /rivers/{id} | 河道详情 |
+| 巡查 | GET | /patrols | 巡查记录 |
+| 水质 | GET | /water/sites | 监测站点 |
+| 水质 | GET | /water/data | 水质数据 |
+| 事件 | GET | /events | 事件列表 |
+| 任务 | GET | /tasks | 任务列表 |
+| 新闻 | GET | /news | 新闻列表 |
+| 文件 | POST | /files/upload | 文件上传 |
+| 导出 | GET | /export/patrol | 导出巡查记录 |
+| 消息 | GET | /notify/messages | 站内消息 |
+| 操作日志 | GET | /operation-logs | 操作审计日志 |
+
+完整接口列表访问 Knife4j 文档：http://localhost:8084/api/v1/doc.html
+
+---
+
+ 7. AI 检测模型
+
+ 7.1 漂浮物检测 API
+
+**端点**：`POST http://localhost:8001/api/v1/ai/floating-objects/detect`
+
+**请求体**：
+
+json
+{
+"image_base64": "<Base64 编码的图片>",
+"confidence_threshold": 0.5,
+"return_visualization": true
+}
+
+
+**响应**：
+
+json
+{
+"code": 200,
+"message": "success",
+"data": {
+"image_width": 1918,
+"image_height": 1080,
+"total_count": 2,
+"detections": [
+      {
+"class_id": 2,
+"class_name": "bottle",
+"class_name_cn": "瓶类",
+"confidence": 0.873,
+"bbox": { "x1": 100, "y1": 200, "x2": 150, "y2": 250 },
+"color": "00d4ff"
+      }
+],
+"demo_mode": false,
+"visualization_base64": "<Base64 编码的可视化图片>"
+  }
+}
+
+
+ 7.2 检测类别定义
+
+代码定义在 [river-ai/models/constants.py](./river-ai/models/constants.py))：
+
+| ID | 英文名 | 中文名 | 颜色 |
+|----|--------|--------|------|
+| 0 | plastic | 塑料制品 | 00d4ff |
+| 1 | foam | 泡沫制品 | ff9800 |
+| 2 | bottle | 瓶类 | 4caf50 |
+| 3 | branch | 树枝枯木 | 9c27b0 |
+| 4 | grass | 水草藻类 | 8bc34a |
+| 5 | trash | 其他垃圾 | f44336 |
+
+ 7.3 演示模式（DEMO MODE）
+
+当真实模型 `floating_objects.onnx` 不存在时，AI 服务自动切换到演示模式：
+
+- 使用 COCO 预训练 `yolov8n.pt`（80 类日常物品）
+- 通过 [COCO_TO_FLOATING_MAPPING](./river-ai/services/floating_objects/service.pyL34-L83) 把 COCO 类别映射到河道漂浮物类别
+- 未映射的 COCO 类别（如人、车、动物）会被过滤，避免误报
+- 置信度阈值自动提升到 0.4 以减少误检
+- 返回结果中 `demo_mode: true`
+
+启动日志会显示明显的警告：
+
+
+⚠️  进入过渡演示模式（DEMO MODE）
+⚠️  使用 COCO 预训练模型 + 类别映射
+⚠️  该模式精度有限，仅用于功能演示
+⚠️  请尽快训练真实模型并放置到 models/production/floating_objects.onnx
+
+
+ 7.4 部署真实模型
+
+　　　1.按 [漂浮物检测模型技术方案..md](./漂浮物检测模型技术方案..md) 完成数据采集、标注、训练
+　　　2.把训练好的 ONNX 模型放到：
+
+
+　　　e:\河道治理\river-ai\models\production\floating_objects.onnx
+
+
+3. 重启 AI 服务即可自动切换到真实模型模式，**无需改代码**，`demo_mode` 会自动变为 `false`
+
+ 7.5 模型测试脚本
+
+[river-ai/test_demo_detect.py](./river-ai/test_demo_detect.py) 用于快速验证检测 API：
+
+powershell
+python d:\河道治理\river-ai\test_demo_detect.py
+
+
+默认用 ultralytics 自带的 `bus.jpg` 测试，修改脚本中的 `IMAGE` 变量可换其他图片。
+
+ 7.6 其他 AI 服务
+
+| 端点 | 功能 |
+|------|------|
+| POST /api/v1/ai/image-recognition | 图像识别（COCO 80 类） |
+| POST /api/v1/ai/water-prediction | 水质预测（LSTM） |
+| POST /api/v1/ai/smart-dispatch | 智能调度 |
+| GET /api/v1/ai/floating-objects/classes | 查询漂浮物类别定义 |
+
+---
+
+ 8. 定时任务
+
+后端启动后自动激活（代码在 [river-server/src/main/java/com/zhihetong/river/task/](./river-server/src/main/java/com/zhihetong/river/task/)）：
+
+| 任务类 | 功能 | 执行频率 | 日志关键字 |
+|--------|------|---------|-----------|
+| [WaterQualityAlertTask](./river-server/src/main/java/com/zhihetong/river/task/WaterQualityAlertTask.java) | 扫描近 30 分钟水质数据，超标自动生成告警 | 每 30 分钟 | `水质超标扫描任务启动` |
+| [ReportGenerationTask](./river-server/src/main/java/com/zhihetong/river/task/ReportGenerationTask.java) | 自动生成河长履职报告 | 每周一 02:00 | `履职报告生成任务` |
+
+---
+
+ 9. WebSocket 实时推送
+
+**端点**：`ws://localhost:8084/api/v1/ws?userId=<用户ID>`
+
+配置在 [WebSocketConfig.java](./river-server/src/main/java/com/zhihetong/river/config/WebSocketConfig.java))，实现类 [WebSocketHandler](./river-server/src/main/java/com/zhihetong/river/config/WebSocketHandler.java))、[WebSocketServiceImpl](./river-server/src/main/java/com/zhihetong/river/service/impl/WebSocketServiceImpl.java))。
+
+**推送场景**：
+- 水质超标预警
+- 事件工单分派
+- 任务到期提醒
+- 系统通知
+
+**前端接入示例**：
+
+javascript
+const ws = new WebSocket(`ws://localhost:8084/api/v1/ws?userId=${userId}`)
+ws.onmessage = (event) ={
+const data = JSON.parse(event.data)
+console.log('收到推送:', data)
+}
+
+
+---
+
+ 10. 数据导出
+
+[ExportController](./river-server/src/main/java/com/zhihetong/river/controller/ExportController.java) 提供 4 个导出接口，支持 Excel 和 PDF 两种格式：
+
+| 接口 | 路径 | 参数 |
+|------|------|------|
+| 巡查记录 | GET /export/patrol | riverId, startDate, endDate, format |
+| 水质报告 | GET /export/water | siteId, startDate, endDate, format |
+| 问题上报 | GET /export/issue | riverId, startDate, endDate, format |
+| 履职报告 | GET /export/report | userId, startDate, endDate, format |
+
+**示例**：
+
+powershell
+$headers = @{ "Authorization" = "Bearer $token" }
+Invoke-WebRequest -Uri "http://localhost:8084/api/v1/export/patrol?format=excel&startDate=2026-09-01&endDate=2026-09-18" `
+-Headers $headers -OutFile "巡查记录..xlsx"
+
+
+`format` 参数取值：`excel`（默认）/ `pdf`
+
+---
+
+ 11. 文件存储
+
+[FileController](./river-server/src/main/java/com/zhihetong/river/controller/FileController.java) 提供文件上传/下载/删除接口。
+
+**配置**（application.yml）：
+
+yaml
+file:
+storage:
+path: ./uploads
+url-prefix: /files
+
+
+**上传示例**：
+
+powershell
+$filePath = "C:\test.jpg"
+$form = @{ file = Get-Item $filePath }
+$response = Invoke-WebRequest -Uri "http://localhost:8084/api/v1/files/upload" `
+-Method POST -Headers $headers -Form $form -UseBasicParsing
+$fileInfo = ($response.Content | ConvertFrom-Json).data
+Write-Host "文件路径: $($fileInfo.url)"
+
+
+**访问文件**：通过 [WebMvcConfig](./river-server/src/main/java/com/zhihetong/river/config/WebMvcConfig.java) 静态资源映射，URL 格式：
+
+
+http://localhost:8084/api/v1/files/<file_name>
+
+
+---
+
+ 12. 常见问题
+
+ 12.1 PowerShell 脚本无法运行
+**现象**：`无法加载文件 xxx.ps1，因为在此系统上禁止运行脚本`
+
+**解决**：PowerShell 执行策略限制，所有命令直接调用可执行文件绕过：
+
+powershell
+ 不要用：mvn
+ 改用：.\mvnw.cmd
+ 不要用：yarn dev
+ 改用：npx vite
+
+
+ 12.2 Maven 下载依赖 SSL 错误
+
+**现象**：`PKIX path building failed: unable to find valid certification path to requested target`
+
+**原因**：JDK 1.8.0_91 的 cacerts 证书库过旧，不信任 maven.apache.org 的证书。
+
+**解决**：
+　　　1.已配置阿里云镜像（见 [2.5 节](25-maven-镜像配置避免-ssl-证书错误)）
+　　　2.打包时加 SSL 跳过参数：
+powershell
+.\mvnw.cmd clean package "-DskipTests" "-Dmaven.wagon.http.ssl.insecure=true" "-Dmaven.wagon.http.ssl.allowall=true" -q
+
+
+ 12.3 PowerShell 参数含 `=` 报错
+
+**现象**：`Unknown lifecycle phase ".test.skip=true"`
+
+**原因**：PowerShell 把 `=` 当参数分隔符。
+
+**解决**：用引号包裹含 `=` 的参数：
+
+powershell
+ 错误：.\mvnw.cmd clean package -Dmaven.test.skip=true
+ 正确：
+.\mvnw.cmd clean package "-Dmaven.test.skip=true"
+
+
+ 12.4 后端启动报 "Invalid CUDA 'device=0'"
+
+**现象**：AI 服务返回 500，提示 CUDA 不可用。
+
+**原因**：CPU 版 PyTorch 不支持 CUDA。
+
+**解决**：已在 [service.py](./river-ai/services/floating_objects/service.pyL143-L149) 自动回退 CPU，无需手动处理。日志会显示 `CUDA 不可用，自动回退到 CPU 推理`。
+
+ 12.5 ultralytics 配置目录权限错误
+
+**现象**：`PermissionError: [WinError 5] 拒绝访问: 'C:\Users\Lenovo\AppData\Roaming\Ultralytics'`
+
+**解决**：设置环境变量重定向到项目内：
+
+powershell
+$env:YOLO_CONFIG_DIR="d:\河道治理\river-ai\.ultralytics"
+
+
+ 12.6 uvicorn 字符串导入失败
+
+**现象**：`Error loading ASGI app. Could not import module "main"` 或 `Import string "app" must be in format "<module>:<attribute>"`
+
+**原因**：原配置 `uvicorn.run("main:app", reload=True)` 用字符串导入，相对路径找不到模块。
+
+**解决**：已在 [main.py](./river-ai/services/main.pyL336-L343) 修改为直接传 app 对象 + 关闭 reload：
+
+python
+uvicorn.run(app, host="0.0.0.0", port=8001, reload=False)
+
+
+启动命令必须在 `river-ai` 根目录下用模块方式运行：
+
+powershell
+cd d:\河道治理\river-ai
+python -m services.main
+
+
+ 12.7 端口被占用
+
+**查端口占用**：
+powershell
+netstat -ano | findstr ":8084"
+ 找到 PID 后
+Stop-Process -Id <PID-Force
+
+
+各服务默认端口：
+
+| 服务 | 端口 |
+|------|------|
+| river-server | 8084 |
+| river-admin | 5173 |
+| river-dashboard | 5174 |
+| river-ai | 8001 |
+| MySQL | 3306 |
+
+ 12.8 前端 API 地址不对
+
+如前端调用后端 404，检查 [river-admin/src/api/index.ts](./river-admin/src/api/index.ts) 和 [river-dashboard/vite.config.ts](./river-dashboard/vite.config.ts) 的代理配置，确保指向 `http://localhost:8084`。
+
+ 12.9 数据库连接失败
+
+　　　1.确认 MySQL 已启动（phpStudy 或服务）
+　　　2.确认 `river_governance` 数据库已创建
+　　　3.用 Navicat 测试连接 `localhost:3306` root/root
+　　　4.检查 [application.yml](./river-server/src/main/resources/application.yml) 配置
+---
+
+ 13. 停止服务
+
+ 13.1 命令行启动的服务
+
+按 `Ctrl + C` 即可停止。如果是后台进程，用命令 ID 停止（本工具场景）。
+
+ 13.2 查找并停止 Java 进程
+
+powershell
+ 查找
+Get-Process -Name java -ErrorAction SilentlyContinue | Select-Object Id, ProcessName, StartTime
+
+ 停止
+Stop-Process -Name java -Force
+
+
+ 13.3 查找并停止 Node 进程
+
+powershell
+Get-Process -Name node -ErrorAction SilentlyContinue | Stop-Process -Force
+
+
+ 13.4 停止 MySQL
+
+powershell
+Stop-Process -Name mysqld -Force
+
+---
+
+ 附录：快速启动一键脚本
+
+把以下内容保存为 `start-all.ps1`，可一键启动所有服务：
+
+powershell
+ start-all.ps1 - 智河通平台一键启动脚本
+ 使用方式：powershell -ExecutionPolicy Bypass -File start-all.ps1
+
+$ErrorActionPreference = "Continue"
+
+ 1. 设置环境
+$env:JAVA_HOME = "D:\soft\jdk1.8.0_91\jdk1.8.0_91"
+$env:Path = "$env:JAVA_HOME\bin;$env:Path"
+
+ 2. 启动后端（后台）
+Start-Process -FilePath "java" -ArgumentList "-jar", "d:\河道治理\river-server\target\river-server-1.0.0.jar" -WorkingDirectory "d:\河道治理\river-server"
+Write-Host "后端服务启动中（8084）..."
+
+ 3. 启动 AI 服务（后台）
+Start-Process -FilePath "python" -ArgumentList "-m", "services.main" -WorkingDirectory "d:\河道治理\river-ai"
+Write-Host "AI 服务启动中（8001）..."
+
+ 4. 启动管理后台（后台）
+Start-Process -FilePath "cmd" -ArgumentList "/c", "npm run dev" -WorkingDirectory "d:\河道治理\river-admin"
+Write-Host "管理后台启动中（5173）..."
+ 5. 启动数据看板（后台）
+Start-Process -FilePath "cmd" -ArgumentList "/c", "npm run dev" -WorkingDirectory "d:\河道治理\river-dashboard"
+Write-Host "数据看板启动中（5174）..."
+
+Start-Sleep -Seconds 15
+Write-Host ""
+Write-Host "=========================================="
+Write-Host "所有服务已启动："
+Write-Host "  后端 API:    http://localhost:8084/api/v1"
+Write-Host "  接口文档:    http://localhost:8084/api/v1/doc.html"
+Write-Host "  管理后台:    http://localhost:5173"
+Write-Host "  数据看板:    http://localhost:5174"
+Write-Host "  AI 服务:     http://localhost:8001/docs"
+Write-Host "=========================================="
+
+
+---
+
+**文档版本**：v1.
+**更新日期**：2026-09-18  
+**适用项目**：智河通 - 基于 AI 与大数据的智慧河长协同治理平台
