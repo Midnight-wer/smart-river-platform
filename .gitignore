@@ -5,18 +5,17 @@ __pycache__/
 *.pyc
 
 # ===== 大体积数据集与训练产物（可由脚本复现） =====
-ai-training/datasets/
+river-admin/ai-training/datasets/
 ai-training-downloads/
 runs/
-ai-training/runs/
 
 # ===== 模型权重二进制（重训可复现，不入库） =====
-ai-training/models/*.pt
-ai-training/models/*.onnx
-ai-training/models/*.tflite
-ai-training/models/*.pb
-ai-training/models/*.bin
-ai-training/*.pt
+river-admin/ai-training/models/*.pt
+river-admin/ai-training/models/*.onnx
+river-admin/ai-training/models/*.tflite
+river-admin/ai-training/models/*.pb
+river-admin/ai-training/models/*.bin
+river-admin/ai-training/*.pt
 
 # ===== 日志与临时产物 =====
 logs/
